@@ -12,6 +12,9 @@ namespace Watershed
         public int y;
         public byte grey;
         public int region;
+        public LinkedListNode<WatershedPixel> node;
+        public List<WatershedPixel> neighbourWPixelList = new List<WatershedPixel>(8);
+        public int curtNeighbourIdx = 0;
 
         public WatershedPixel(  byte grey, int region)
         {
