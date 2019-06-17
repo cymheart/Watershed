@@ -231,8 +231,7 @@ namespace Watershed
                 for(int i = wpixel.curtNeighbourIdx; i < wpixel.neighbourWPixelList.Count; i++)
                 {
                     neighbourPixel = wpixel.neighbourWPixelList[i];
-                    neighbourPixel.region = wpixel.region;
-
+                    
                     if(neighbourPixel.grey == wpixel.grey)
                     {
                         if (neighbourPixel.region == InVaildRegion)
@@ -244,7 +243,7 @@ namespace Watershed
                             wpixel = neighbourPixel;
                             break;
                         }
-                        else   //不同区域汇集处
+                        else if(neighbourPixel.region != wpixel.region)     //不同区域汇集处
                         {
                             neighbourPixel.region = WatershedLineRegion;
                         }
@@ -315,8 +314,5 @@ namespace Watershed
 
             return true;
         }
-
-
-
     }
 }
