@@ -26,7 +26,7 @@ namespace Watershed
                 stride = bitmap.Width;
                 Rectangle srcBitmapRect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
 
-                //将Bitmap锁定到系统内存中,获得BitmapData
+                ////将Bitmap锁定到系统内存中,获得BitmapData
                 BitmapData srcBmData = bitmap.LockBits(srcBitmapRect,
                     ImageLockMode.ReadWrite, PixelFormat.Format8bppIndexed);
 
