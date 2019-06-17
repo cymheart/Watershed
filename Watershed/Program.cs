@@ -13,14 +13,14 @@ namespace Watershed
         /// </summary>
         [STAThread]
         static void Main()
-        {
-      
+        {      
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
 
-            int a;
-            a = 4;
+            Watershed watershed = new Watershed();
+            watershed.Create();
+
         }
     }
 }

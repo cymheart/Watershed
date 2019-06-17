@@ -29,6 +29,18 @@ namespace Watershed
         List<List<WatershedPixel>> waterPixelRegionList = new List<List<WatershedPixel>>(500);
         List<List<WatershedPixel>> backWaterPixelRegionList = new List<List<WatershedPixel>>(500);
 
+        public void Create()
+        {
+            for (int i = 0; i < 500; i++)
+            {
+                waterPixelRegionList.Add(null);
+                backWaterPixelRegionList.Add(null);
+            }
+
+            Bitmap bitmap = new Bitmap(Image.FromFile("d://gel.jpg"));
+            CreateWatershedPixelList(bitmap);
+        }
+
         void CreateWatershedPixelList(Bitmap bitmap)
         {
             unsafe
@@ -54,7 +66,7 @@ namespace Watershed
                     {
                         grey = *(rowHeadPtr + j);
 
-                        wPixel = new WatershedPixel(grey, 0);
+                        wPixel = new WatershedPixel(j, i, grey, 0);
                         watershedPixelList.Add(wPixel);
                     }
                 }
@@ -65,7 +77,19 @@ namespace Watershed
 
                 Run();
 
+                byte* curtPtr;
+                for (int i = 0; i < orgWatershedPixes.Length; i++)
+                {
+                    if (orgWatershedPixes[i].region != WatershedLineRegion)
+                        continue;
+
+                    curtPtr = srcPtr + srcBmData.Stride * orgWatershedPixes[i].y + orgWatershedPixes[i].x;
+                    *curtPtr = 0;
+                }
+
                 bitmap.UnlockBits(srcBmData);
+
+                bitmap.Save("d:\\test.png");
             }
         }
 
@@ -97,34 +121,39 @@ namespace Watershed
         {
             WatershedPixel wpixel;
             int curtRegion = node.Value.region;
+            int curtGrey = node.Value.grey;
 
             //获取已定义的所有区域
-            if (curtRegion != InVaildRegion)
+            for (; node != null; node = node.Next)
             {
-                for (; node != null;  node = node.Next)
-                {
-                    wpixel = node.Value;
-                    if (wpixel.region == InVaildRegion)
-                    {
-                        node = node.Next;
-                        continue;
-                    }
+                wpixel = node.Value;
 
-                    AddWatershedPixelToRegionList(wpixel);
-                }
+                if (wpixel.grey > curtGrey)
+                    break;
 
-                SpreadRegions();
+                if (wpixel.region == InVaildRegion)
+                    continue;
+  
+                AddWatershedPixelToRegionList(wpixel);
             }
 
+            SpreadRegions();
+
+
             //获取没有定义的区域
+            node = watershedPixelLinkedList.First;
             while (node != null)
             {
                 wpixel = node.Value;
+
+                if (wpixel.grey > curtGrey)
+                    break;
 
                 if (wpixel.region == InVaildRegion)
                 {
                     curtRegion++;
                     wpixel.region = curtRegion;
+                    CreateNeighbourWPixels(wpixel);
                     DeepSearchPixel(wpixel);
                 }
 
@@ -157,10 +186,13 @@ namespace Watershed
             int count = 0;
 
             while (true)
-            {   
+            {
+                count = 0;
+
                 for (int i = 0; i < waterPixelRegionList.Count; i++)
                 {
-                    if (waterPixelRegionList[i].Count == 0)
+                    if (waterPixelRegionList[i] == null || 
+                        waterPixelRegionList[i].Count == 0)
                     {
                         count++;
                         continue;
@@ -184,7 +216,7 @@ namespace Watershed
                 centerPixel = waterPixelRegionList[region][i];
                 CreateNeighbourWPixels(centerPixel);
 
-                for (int j = 0; j < centerPixel.neighbourWPixelList.Count; i++)
+                for (int j = 0; j < centerPixel.neighbourWPixelList.Count; j++)
                 {
                     neighbourPixel = centerPixel.neighbourWPixelList[j];
 
@@ -200,6 +232,11 @@ namespace Watershed
                             neighbourPixel.region != centerPixel.region)  //不同区域汇集处
                         {
                             neighbourPixel.region = WatershedLineRegion;
+                        }
+                        else
+                        {
+                            int a;
+                            a = 3;
                         }
                     }
                     else if(neighbourPixel.grey > centerPixel.grey)
@@ -241,7 +278,8 @@ namespace Watershed
                             wpixel.curtNeighbourIdx = i + 1;
                             searchPixelStack.Push(wpixel);
                             wpixel = neighbourPixel;
-                            break;
+                            i = wpixel.curtNeighbourIdx - 1;                    
+                            continue;
                         }
                         else if(neighbourPixel.region != wpixel.region)     //不同区域汇集处
                         {
@@ -255,6 +293,10 @@ namespace Watershed
                 }
 
                 watershedPixelLinkedList.Remove(wpixel.node);
+
+                if (searchPixelStack.Count == 0)
+                    break;
+
                 wpixel = searchPixelStack.Pop();
             }
         }
