@@ -23,25 +23,20 @@ namespace Watershed
         WatershedPixel[] orgWatershedPixes;
         LinkedList<WatershedPixel> watershedPixelLinkedList = new LinkedList<WatershedPixel>();
         int stride;
+        int maxRegion = 0;
 
         Stack<WatershedPixel> searchPixelStack = new Stack<WatershedPixel>();
 
         List<List<WatershedPixel>> waterPixelRegionList = new List<List<WatershedPixel>>(500);
         List<List<WatershedPixel>> backWaterPixelRegionList = new List<List<WatershedPixel>>(500);
 
-        public void Create()
+        public void Create(string imgPath)
         {
-            for (int i = 0; i < 500; i++)
-            {
-                waterPixelRegionList.Add(null);
-                backWaterPixelRegionList.Add(null);
-            }
-
-            Bitmap bitmap = new Bitmap(Image.FromFile("d://gel.jpg"));
+            Bitmap bitmap = new Bitmap(Image.FromFile(imgPath));
             CreateWatershedPixelList(bitmap);
         }
 
-        void CreateWatershedPixelList(Bitmap bitmap)
+        public void CreateWatershedPixelList(Bitmap bitmap)
         {
             unsafe
             {
@@ -65,7 +60,6 @@ namespace Watershed
                     for (int j = 0; j < bitmap.Width; j++)
                     {
                         grey = *(rowHeadPtr + j);
-
                         wPixel = new WatershedPixel(j, i, grey, 0);
                         watershedPixelList.Add(wPixel);
                     }
@@ -84,12 +78,12 @@ namespace Watershed
                         continue;
 
                     curtPtr = srcPtr + srcBmData.Stride * orgWatershedPixes[i].y + orgWatershedPixes[i].x;
-                    *curtPtr = 0;
+                    *curtPtr = 5;
                 }
 
                 bitmap.UnlockBits(srcBmData);
 
-                bitmap.Save("d:\\test.png");
+                bitmap.Save("d:\\test.png", ImageFormat.Png);
             }
         }
 
@@ -133,6 +127,13 @@ namespace Watershed
 
                 if (wpixel.region == InVaildRegion)
                     continue;
+
+                if(wpixel.region == WatershedLineRegion)
+                {
+                    watershedPixelLinkedList.Remove(wpixel.node);
+                    wpixel.node = null;
+                    continue;
+                }
   
                 AddWatershedPixelToRegionList(wpixel);
             }
@@ -168,13 +169,31 @@ namespace Watershed
         /// <param name="wpixel"></param>
         void AddWatershedPixelToRegionList(WatershedPixel wpixel)
         {
-            if(waterPixelRegionList[wpixel.region] == null)
+            CreatePreRegion(wpixel.region);
+
+            if (waterPixelRegionList[wpixel.region] == null)
             {
-                waterPixelRegionList[wpixel.region] = new List<WatershedPixel>(1000);
-                backWaterPixelRegionList[wpixel.region] = new List<WatershedPixel>(1000);
+                waterPixelRegionList[wpixel.region] = new List<WatershedPixel>(500);
+                backWaterPixelRegionList[wpixel.region] = new List<WatershedPixel>(500);
             }
 
             waterPixelRegionList[wpixel.region].Add(wpixel);
+
+            if (maxRegion < wpixel.region + 1)
+                maxRegion = wpixel.region + 1;
+        }
+
+        void CreatePreRegion(int region)
+        {
+            if (region < waterPixelRegionList.Count)
+                return;
+
+            int count = region + 1 - waterPixelRegionList.Count + 100;
+            for (int i = 0; i < count; i++)
+            {
+                waterPixelRegionList.Add(null);
+                backWaterPixelRegionList.Add(null);
+            }
         }
 
 
@@ -189,7 +208,7 @@ namespace Watershed
             {
                 count = 0;
 
-                for (int i = 0; i < waterPixelRegionList.Count; i++)
+                for (int i = 0; i < maxRegion; i++)
                 {
                     if (waterPixelRegionList[i] == null || 
                         waterPixelRegionList[i].Count == 0)
@@ -201,7 +220,7 @@ namespace Watershed
                     SpreadSearchPixel(i);
                 }
 
-                if (count == waterPixelRegionList.Count)
+                if (count == maxRegion)
                     break;
             }
         }
@@ -215,6 +234,13 @@ namespace Watershed
             {
                 centerPixel = waterPixelRegionList[region][i];
                 CreateNeighbourWPixels(centerPixel);
+
+                if (centerPixel.region == WatershedLineRegion)
+                {
+                    watershedPixelLinkedList.Remove(centerPixel.node);
+                    centerPixel.node = null;
+                    continue;
+                }
 
                 for (int j = 0; j < centerPixel.neighbourWPixelList.Count; j++)
                 {
@@ -233,11 +259,6 @@ namespace Watershed
                         {
                             neighbourPixel.region = WatershedLineRegion;
                         }
-                        else
-                        {
-                            int a;
-                            a = 3;
-                        }
                     }
                     else if(neighbourPixel.grey > centerPixel.grey)
                     {
@@ -245,7 +266,11 @@ namespace Watershed
                     }
                 }
 
-                watershedPixelLinkedList.Remove(centerPixel.node);
+                if (centerPixel.node != null)
+                {
+                    watershedPixelLinkedList.Remove(centerPixel.node);
+                    centerPixel.node = null;
+                }
             }
 
             List<WatershedPixel> tmp = waterPixelRegionList[region];
@@ -283,7 +308,7 @@ namespace Watershed
                         }
                         else if(neighbourPixel.region != wpixel.region)     //不同区域汇集处
                         {
-                            neighbourPixel.region = WatershedLineRegion;
+                            neighbourPixel.region = WatershedLineRegion;   
                         }
                     }
                     else
@@ -292,7 +317,11 @@ namespace Watershed
                     }
                 }
 
-                watershedPixelLinkedList.Remove(wpixel.node);
+                if (wpixel.node != null)
+                {
+                    watershedPixelLinkedList.Remove(wpixel.node);
+                    wpixel.node = null;
+                }
 
                 if (searchPixelStack.Count == 0)
                     break;
@@ -300,7 +329,6 @@ namespace Watershed
                 wpixel = searchPixelStack.Pop();
             }
         }
-
 
         void CreateNeighbourWPixels(WatershedPixel centerWPixel)
         {

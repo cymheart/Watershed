@@ -19,7 +19,7 @@ namespace Watershed
             Application.Run(new Form1());
 
             Watershed watershed = new Watershed();
-            watershed.Create();
+            watershed.Create("d:\\gel2.jpg");
 
         }
     }

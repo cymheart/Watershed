@@ -23,6 +23,5 @@ namespace Watershed
             this.grey = grey;
             this.region = region;
         }
-
     }
 }
