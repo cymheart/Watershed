@@ -41,8 +41,8 @@ namespace Watershed
         int maxRegion = 0;
 
         object lockObj = new object();
-        List<ManualResetEvent> manualEvents = new List<ManualResetEvent>();
-        int threadCount = 20;
+        List<ManualResetEvent> manualEventList = new List<ManualResetEvent>();
+        int threadCount = 300;
 
         Stack<WatershedElem> searchElemStack = new Stack<WatershedElem>();
         List<List<WatershedElem>> waterElemRegionList = new List<List<WatershedElem>>(500);
@@ -59,7 +59,7 @@ namespace Watershed
 
         public Watershed()
         {
-       
+         
         }
 
         public void Solve(List<WatershedElem> watershedElemList)
@@ -168,8 +168,8 @@ namespace Watershed
 
             waterElemRegionList[elem.region].Add(elem);
 
-            if (maxRegion < elem.region + 1)
-                maxRegion = elem.region + 1;
+            if (maxRegion < elem.region)
+                maxRegion = elem.region;
         }
 
         void CreatePreRegion(int region)
@@ -212,49 +212,47 @@ namespace Watershed
                 int m = maxRegion % threadCount;
                 int lastIdx = 1;
                 int endCount;
-      
-                for (int i = 1; i <= n; i++)
-                {
-                    endCount = i * threadCount;
-                    ManualResetEvent mre = new ManualResetEvent(false);
-                    manualEvents.Add(mre);
+                int tCount = threadCount;
+                if (maxRegion < threadCount)
+                    tCount = maxRegion;
 
+                for (int i = 1; i <= tCount; i++)
+                {
+                    if (i != tCount)
+                    {
+                        if (n != 0)
+                            endCount = i * n;
+                        else
+                            endCount = lastIdx + 1;
+                    }
+                    else
+                    {
+                        endCount = m + n * i + 1;
+                    }
+
+                    ManualResetEvent mre = new ManualResetEvent(false);
+                    manualEventList.Add(mre);
                     ThreadData data = new ThreadData() { regionMin = lastIdx, regionMax = endCount - 1, setEvent = mre };
                     ThreadPool.QueueUserWorkItem(SpreadSearchElems, data);
                     lastIdx = endCount;
                 }
 
-                endCount = m + n * threadCount;
-                lastIdx = n * threadCount;
-                if (lastIdx == 0)
-                    lastIdx = 1;
-
-                for (int i = lastIdx; i < endCount; i++)
-                {
-                    ManualResetEvent mre = new ManualResetEvent(false);
-                    manualEvents.Add(mre);
-
-                    ThreadData data = new ThreadData() { regionMin = i, regionMax = i, setEvent = mre };
-                    ThreadPool.QueueUserWorkItem(SpreadSearchElems, data);
-                }
-
                 WaitSearchElemsStop();
-
             }
         }
 
 
         void WaitSearchElemsStop()
         {
-            if (manualEvents.Count > 0 && manualEvents.Count < 64 )
+            if (manualEventList.Count > 0 && manualEventList.Count < 64 )
             {
-                WaitHandle.WaitAll(manualEvents.ToArray());
-                manualEvents.Clear();
+                WaitHandle.WaitAll(manualEventList.ToArray());
+                manualEventList.Clear();
             }
-            else if (manualEvents.Count > 64)
+            else if (manualEventList.Count > 64)
             {
-                int n = manualEvents.Count / 64;
-                int m = manualEvents.Count % 64;
+                int n = manualEventList.Count / 64;
+                int m = manualEventList.Count % 64;
                 int lastIdx = 0;
                 int endCount;
 
@@ -268,7 +266,7 @@ namespace Watershed
                         endCount = i * 64;
 
                     for (int j = lastIdx; j < endCount; j++)
-                        tmpResetEvents.Add(manualEvents[j]);
+                        tmpResetEvents.Add(manualEventList[j]);
 
                     lastIdx = endCount;
 
@@ -279,7 +277,7 @@ namespace Watershed
                     }
                 }
 
-                manualEvents.Clear();
+                manualEventList.Clear();
             }
         }
 
