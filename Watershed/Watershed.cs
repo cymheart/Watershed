@@ -42,7 +42,7 @@ namespace Watershed
 
         object lockObj = new object();
         List<ManualResetEvent> manualEvents = new List<ManualResetEvent>();
-        int threadCount = 60;
+        int threadCount = 300;
 
         Stack<WatershedElem> searchElemStack = new Stack<WatershedElem>();
         List<List<WatershedElem>> waterElemRegionList = new List<List<WatershedElem>>(500);
