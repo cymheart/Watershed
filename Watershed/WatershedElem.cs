@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 namespace Watershed
 {
-    public class WatershedPixel
+    public class WatershedElem
     {
         public int x;
         public int y;
-        public byte grey;
-        public int region;
-        public LinkedListNode<WatershedPixel> node;
-        public List<WatershedPixel> neighbourWPixelList = new List<WatershedPixel>(8);
+        public int dist;
+        public int region = 0;
+        public LinkedListNode<WatershedElem> node;
+        public List<WatershedElem> neighbourElemList = new List<WatershedElem>(8);
         public int curtNeighbourIdx = 0;
 
-        public WatershedPixel(int x, int y, byte grey, int region)
+        public WatershedElem(int x, int y, int dist, int region = 0)
         {
             this.x = x;
             this.y = y;
-            this.grey = grey;
+            this.dist = dist;
             this.region = region;
         }
     }

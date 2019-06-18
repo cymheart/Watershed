@@ -16,11 +16,7 @@ namespace Watershed
         {      
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
-
-            Watershed watershed = new Watershed();
-            watershed.Create("d:\\gel2.jpg");
-
+            Application.Run(new ImageWatershedForm());
         }
     }
 }
