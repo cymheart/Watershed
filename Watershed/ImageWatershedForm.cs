@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -37,13 +38,23 @@ namespace Watershed
 
         private void btnSelectImg_Click(object sender, EventArgs e)
         {
+            Thread thread = new Thread(new ThreadStart(OpenImgFileDialog));
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+        }
+
+        void OpenImgFileDialog()
+        {
             openImgFileDialog.InitialDirectory = System.IO.Directory.GetCurrentDirectory();
             DialogResult result = openImgFileDialog.ShowDialog();
 
             if (result == DialogResult.OK)
             {
-                textBoxImgPath.Text = openImgFileDialog.FileName;
-                imgOrg.Image = Image.FromFile(textBoxImgPath.Text);
+                this.Invoke((EventHandler)(delegate
+                {
+                    textBoxImgPath.Text = openImgFileDialog.FileName;
+                    imgOrg.Image = Image.FromFile(textBoxImgPath.Text);
+                }));
             }
         }
 
@@ -63,12 +74,22 @@ namespace Watershed
         {
             if (imgWatershed.Image != null)
             {
-                DialogResult result = saveImgDialog.ShowDialog();
-                if (result == DialogResult.OK)
+                Thread thread = new Thread(new ThreadStart(SaveImgDialog));
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+            }
+        }
+
+        void SaveImgDialog()
+        {
+            DialogResult result = saveImgDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                this.Invoke((EventHandler)(delegate
                 {
                     imgWatershed.Image.Save(saveImgDialog.FileName);
                     MessageBox.Show(this, "文件保存成功.");
-                }
+                }));
             }
         }
 
