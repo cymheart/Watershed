@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Watershed
 {
+    /// <summary>
+    /// 多线程版
+    /// </summary>
     public class Watershed
     {
         /// <summary>
