@@ -1,0 +1,9 @@
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\bin\Release\Watershed.exe.config
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\bin\Release\Watershed.exe
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\bin\Release\Watershed.pdb
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\obj\Release\Watershed.ImageWatershedForm.resources
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\obj\Release\Watershed.Properties.Resources.resources
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\obj\Release\Watershed.csproj.GenerateResource.cache
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\obj\Release\Watershed.csproj.CoreCompileInputs.cache
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\obj\Release\Watershed.exe
+D:\MyDocuments\GitHub\WatershedAlgorithm\Watershed\obj\Release\Watershed.pdb
