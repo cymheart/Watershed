@@ -176,6 +176,7 @@
             this.ClientSize = new System.Drawing.Size(773, 595);
             this.Controls.Add(this.tableLayoutPanel1);
             this.Name = "ImageWatershedForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);

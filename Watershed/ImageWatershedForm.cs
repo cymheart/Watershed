@@ -13,21 +13,34 @@ namespace Watershed
     public partial class ImageWatershedForm : Form
     {
         ImageWatershed imageWatershed;
+        string defaultImgPath = System.AppDomain.CurrentDomain.BaseDirectory + "gel.jpg";
 
         public ImageWatershedForm()
         {
             InitializeComponent();
 
             saveImgDialog.Filter = "png图像文件(*.png)|*.png|jpeg图像文件(*.jpg)|*.jpg";
-
             imageWatershed = new ImageWatershed();
+
+
+            textBoxImgPath.Text = defaultImgPath;
+
+            try
+            {
+                imgOrg.Image = Image.FromFile(textBoxImgPath.Text);
+            }
+            catch
+            {
+                textBoxImgPath.Text = null;
+            }
         }
 
         private void btnSelectImg_Click(object sender, EventArgs e)
         {
+            openImgFileDialog.InitialDirectory = System.AppDomain.CurrentDomain.BaseDirectory;
             DialogResult result = openImgFileDialog.ShowDialog();
 
-            if(result == DialogResult.OK)
+            if (result == DialogResult.OK)
             {
                 textBoxImgPath.Text = openImgFileDialog.FileName;
                 imgOrg.Image = Image.FromFile(textBoxImgPath.Text);
