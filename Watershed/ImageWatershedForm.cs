@@ -13,7 +13,7 @@ namespace Watershed
     public partial class ImageWatershedForm : Form
     {
         ImageWatershed imageWatershed;
-        string defaultImgPath = System.AppDomain.CurrentDomain.BaseDirectory + "gel.jpg";
+        string defaultImgPath = System.IO.Directory.GetCurrentDirectory() + "\\gel.jpg";
 
         public ImageWatershedForm()
         {
@@ -37,7 +37,7 @@ namespace Watershed
 
         private void btnSelectImg_Click(object sender, EventArgs e)
         {
-            openImgFileDialog.InitialDirectory = System.AppDomain.CurrentDomain.BaseDirectory;
+            openImgFileDialog.InitialDirectory = System.IO.Directory.GetCurrentDirectory();
             DialogResult result = openImgFileDialog.ShowDialog();
 
             if (result == DialogResult.OK)
