@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Watershed
@@ -23,6 +24,13 @@ namespace Watershed
         /// </summary>
         public const int InVaildRegion = 0;
 
+        struct ThreadData
+        {
+            public int regionMin;
+            public int regionMax;
+            public ManualResetEvent setEvent;
+        }
+
         /// <summary>
         /// 跨距
         /// </summary>
@@ -31,6 +39,10 @@ namespace Watershed
         WatershedElem[] orgWatershedElems;
         LinkedList<WatershedElem> watershedElemLinkedList = new LinkedList<WatershedElem>(); 
         int maxRegion = 0;
+
+        object lockObj = new object();
+        List<ManualResetEvent> manualEvents = new List<ManualResetEvent>();
+        int threadCount = 60;
 
         Stack<WatershedElem> searchElemStack = new Stack<WatershedElem>();
         List<List<WatershedElem>> waterElemRegionList = new List<List<WatershedElem>>(500);
@@ -43,6 +55,11 @@ namespace Watershed
             {
                 return orgWatershedElems;
             }
+        }
+
+        public Watershed()
+        {
+       
         }
 
         public void Solve(List<WatershedElem> watershedElemList)
@@ -181,21 +198,93 @@ namespace Watershed
 
                 for (int i = 0; i < maxRegion; i++)
                 {
-                    if (waterElemRegionList[i] == null || 
+                    if (waterElemRegionList[i] == null ||
                         waterElemRegionList[i].Count == 0)
                     {
                         count++;
-                        continue;
                     }
-
-                    SpreadSearchElem(i);
                 }
 
                 if (count == maxRegion)
                     break;
+
+                int n = maxRegion / threadCount;
+                int m = maxRegion % threadCount;
+                int lastIdx = 1;
+                int endCount;
+      
+                for (int i = 1; i <= n + 1; i++)
+                {
+                    if (i == n + 1)
+                        endCount = m + (i - 1) * threadCount;
+                    else
+                        endCount = i * threadCount;
+
+                    ManualResetEvent mre = new ManualResetEvent(false);
+                    manualEvents.Add(mre);
+
+                    ThreadData data = new ThreadData() { regionMin = lastIdx, regionMax = endCount - 1, setEvent = mre };
+                    ThreadPool.QueueUserWorkItem(SpreadSearchElems, data);
+                    lastIdx = endCount;
+                }
+
+                WaitSearchElemsStop();
+
             }
         }
 
+
+        void WaitSearchElemsStop()
+        {
+            if (manualEvents.Count > 0 && manualEvents.Count < 64 )
+            {
+                WaitHandle.WaitAll(manualEvents.ToArray());
+                manualEvents.Clear();
+            }
+            else if (manualEvents.Count > 64)
+            {
+                int n = manualEvents.Count / 64;
+                int m = manualEvents.Count % 64;
+                int lastIdx = 0;
+                int endCount;
+
+                List<ManualResetEvent> tmpResetEvents = new List<ManualResetEvent>();
+
+                for (int i = 1; i <= n + 1; i++)
+                {
+                    if (i == n + 1)
+                        endCount = m + (i - 1) * 64;
+                    else
+                        endCount = i * 64;
+
+                    for (int j = lastIdx; j < endCount; j++)
+                        tmpResetEvents.Add(manualEvents[j]);
+
+                    lastIdx = endCount;
+
+                    if (tmpResetEvents.Count != 0)
+                    {
+                        WaitHandle.WaitAll(tmpResetEvents.ToArray());
+                        tmpResetEvents.Clear();
+                    }
+                }
+
+                manualEvents.Clear();
+            }
+        }
+
+        
+        void SpreadSearchElems(object dataObj)
+        {
+            ThreadData data = (ThreadData)dataObj;
+            int regionMin = data.regionMin;
+            ManualResetEvent setEvent = data.setEvent;
+
+            for (int i = data.regionMin; i <= data.regionMax; i++)
+                SpreadSearchElem(i);
+
+            setEvent.Set();
+        }
 
         void SpreadSearchElem(int region)
         {
@@ -206,11 +295,14 @@ namespace Watershed
                 centerElem = waterElemRegionList[region][i];
                 CreateNeighbourElems(centerElem);
 
-                if (centerElem.region == WatershedLineRegion && centerElem.node != null)
-                {           
-                    watershedElemLinkedList.Remove(centerElem.node);
-                    centerElem.node = null;
-                    continue;
+                lock (lockObj)
+                {
+                    if (centerElem.region == WatershedLineRegion && centerElem.node != null)
+                    {
+                        watershedElemLinkedList.Remove(centerElem.node);
+                        centerElem.node = null;
+                        continue;
+                    }
                 }
 
                 for (int j = 0; j < centerElem.neighbourElemList.Count; j++)
@@ -231,16 +323,19 @@ namespace Watershed
                             neighbourElem.region = WatershedLineRegion;
                         }
                     }
-                    else if(neighbourElem.dist > centerElem.dist)
+                    else if (neighbourElem.dist > centerElem.dist)
                     {
                         neighbourElem.region = centerElem.region;
                     }
                 }
 
-                if (centerElem.node != null)
+                lock (lockObj)
                 {
-                    watershedElemLinkedList.Remove(centerElem.node);
-                    centerElem.node = null;
+                    if (centerElem.node != null)
+                    {
+                        watershedElemLinkedList.Remove(centerElem.node);
+                        centerElem.node = null;
+                    }
                 }
             }
 
@@ -248,8 +343,9 @@ namespace Watershed
             waterElemRegionList[region] = backWaterElemRegionList[region];
             backWaterElemRegionList[region] = tmp;
             tmp.Clear();
-        }
 
+           
+        }
 
         /// <summary>
         /// 深度搜索扩散区域边缘(区域会最大化扩散自己的边缘)
