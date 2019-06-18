@@ -42,7 +42,7 @@ namespace Watershed
 
         object lockObj = new object();
         List<ManualResetEvent> manualEventList = new List<ManualResetEvent>();
-        int threadCount = 60;
+        int threadCount = 50;
 
         Stack<WatershedElem> searchElemStack = new Stack<WatershedElem>();
         List<List<WatershedElem>> waterElemRegionList = new List<List<WatershedElem>>(500);
@@ -303,15 +303,17 @@ namespace Watershed
                 centerElem = waterElemRegionList[region][i];
                 CreateNeighbourElems(centerElem);
 
-                lock (lockObj)
+
+                if (centerElem.region == WatershedLineRegion && centerElem.node != null)
                 {
-                    if (centerElem.region == WatershedLineRegion && centerElem.node != null)
+                    lock (lockObj)
                     {
                         watershedElemLinkedList.Remove(centerElem.node);
                         centerElem.node = null;
                         continue;
                     }
                 }
+
 
                 for (int j = 0; j < centerElem.neighbourElemList.Count; j++)
                 {
@@ -337,14 +339,16 @@ namespace Watershed
                     }
                 }
 
-                lock (lockObj)
+                if (centerElem.node != null)
                 {
-                    if (centerElem.node != null)
+                    lock (lockObj)
                     {
                         watershedElemLinkedList.Remove(centerElem.node);
                         centerElem.node = null;
                     }
                 }
+
+
             }
 
             List<WatershedElem> tmp = waterElemRegionList[region];
