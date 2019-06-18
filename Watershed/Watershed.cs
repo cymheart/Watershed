@@ -42,7 +42,7 @@ namespace Watershed
 
         object lockObj = new object();
         List<ManualResetEvent> manualEvents = new List<ManualResetEvent>();
-        int threadCount = 300;
+        int threadCount = 20;
 
         Stack<WatershedElem> searchElemStack = new Stack<WatershedElem>();
         List<List<WatershedElem>> waterElemRegionList = new List<List<WatershedElem>>(500);
@@ -213,19 +213,29 @@ namespace Watershed
                 int lastIdx = 1;
                 int endCount;
       
-                for (int i = 1; i <= n + 1; i++)
+                for (int i = 1; i <= n; i++)
                 {
-                    if (i == n + 1)
-                        endCount = m + (i - 1) * threadCount;
-                    else
-                        endCount = i * threadCount;
-
+                    endCount = i * threadCount;
                     ManualResetEvent mre = new ManualResetEvent(false);
                     manualEvents.Add(mre);
 
                     ThreadData data = new ThreadData() { regionMin = lastIdx, regionMax = endCount - 1, setEvent = mre };
                     ThreadPool.QueueUserWorkItem(SpreadSearchElems, data);
                     lastIdx = endCount;
+                }
+
+                endCount = m + n * threadCount;
+                lastIdx = n * threadCount;
+                if (lastIdx == 0)
+                    lastIdx = 1;
+
+                for (int i = lastIdx; i < endCount; i++)
+                {
+                    ManualResetEvent mre = new ManualResetEvent(false);
+                    manualEvents.Add(mre);
+
+                    ThreadData data = new ThreadData() { regionMin = i, regionMax = i, setEvent = mre };
+                    ThreadPool.QueueUserWorkItem(SpreadSearchElems, data);
                 }
 
                 WaitSearchElemsStop();
